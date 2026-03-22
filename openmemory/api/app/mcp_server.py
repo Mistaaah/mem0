@@ -497,14 +497,25 @@ def setup_mcp_server(app: FastAPI):
             user_id_var.reset(user_token)
             client_name_var.reset(client_token)
 
+    @app.post("/mcp/messages")
     @app.post("/mcp/messages/")
     async def handle_mcp_messages(request: Request):
         try:
             await sse.handle_post_message(request.scope, request.receive, request._send)
             return Response(status_code=204)
         except Exception as e:
-            return Response(content=str(e).encode(), status_code=500)
+            import traceback
+            return Response(content=f"Error: {e}\n{traceback.format_exc()}".encode(), status_code=500)
 
     @app.get("/mcp/health")
     async def mcp_health():
-        return {"status": "ok", "tools": [t.name for t in mcp._mcp_server.tools]}
+        # Generic tool inspection for any SDK version
+        tools = []
+        try:
+            if hasattr(mcp, "tools"):
+                tools = [t.name for t in mcp.tools] if isinstance(mcp.tools, list) else list(mcp.tools.keys())
+            elif hasattr(mcp._mcp_server, "tools"):
+                tools = list(mcp._mcp_server.tools.keys())
+        except:
+            pass
+        return {"status": "ok", "tools": tools}
