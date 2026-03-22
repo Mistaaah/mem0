@@ -484,7 +484,15 @@ async def _handle_post_message_core(request: Request):
 async def mcp_health():
     """Check MCP server health and registered tools"""
     try:
-        tools = [t.name for t in await mcp._mcp_server.list_tools()]
+        import asyncio
+        if hasattr(mcp._mcp_server, "list_tools"):
+            if asyncio.iscoroutinefunction(mcp._mcp_server.list_tools):
+                ts = await mcp._mcp_server.list_tools()
+            else:
+                ts = mcp._mcp_server.list_tools()
+            tools = [t.name for t in ts]
+        else:
+            tools = []
         return {
             "status": "ok",
             "server_name": mcp._mcp_server.name,
