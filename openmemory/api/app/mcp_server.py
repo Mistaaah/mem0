@@ -482,8 +482,10 @@ async def _handle_post_message_core(request: Request):
 
 def setup_mcp_server(app: FastAPI):
     """Setup MCP server with the FastAPI application"""
+    # Standardize the server name
     mcp._mcp_server.name = "mem0-mcp-server"
 
+    # 1. SSE Connection initiation
     @app.get("/mcp/{client_name}/sse/{user_id}")
     async def handle_sse(request: Request):
         uid = request.path_params.get("user_id")
@@ -491,31 +493,43 @@ def setup_mcp_server(app: FastAPI):
         client_name = request.path_params.get("client_name")
         client_token = client_name_var.set(client_name or "")
         try:
-            async with sse.connect_sse(request.scope, request.receive, request._send) as (read, write):
-                await mcp._mcp_server.run(read, write, mcp._mcp_server.create_initialization_options())
+            # Connect the SSE stream
+            async with sse.connect_sse(request.scope, request.receive, request._send) as (read_stream, write_stream):
+                # Run the MCP server loop on this stream
+                await mcp._mcp_server.run(
+                    read_stream,
+                    write_stream,
+                    mcp._mcp_server.create_initialization_options(),
+                )
         finally:
             user_id_var.reset(user_token)
             client_name_var.reset(client_token)
 
-    @app.post("/mcp/messages")
+    # 2. Global Messages Endpoint (POST)
+    # Most MCP clients use the absolute path /mcp/messages/
     @app.post("/mcp/messages/")
+    @app.post("/mcp/messages")
     async def handle_mcp_messages(request: Request):
         try:
             await sse.handle_post_message(request.scope, request.receive, request._send)
             return Response(status_code=204)
         except Exception as e:
             import traceback
-            return Response(content=f"Error: {e}\n{traceback.format_exc()}".encode(), status_code=500)
+            error_data = f"Internal MCP Error: {e}\n{traceback.format_exc()}"
+            return Response(content=error_data.encode(), status_code=500)
 
+    # 3. Simple Health Check
     @app.get("/mcp/health")
     async def mcp_health():
-        # Generic tool inspection for any SDK version
-        tools = []
+        # Dynamic tool detection based on SDK version
+        tools_list = []
         try:
+            # Fast() instances have a tools list or dict
             if hasattr(mcp, "tools"):
-                tools = [t.name for t in mcp.tools] if isinstance(mcp.tools, list) else list(mcp.tools.keys())
+                tools_list = [t.name for t in mcp.tools] if isinstance(mcp.tools, list) else list(mcp.tools.keys())
+            # Or the underlying server instance
             elif hasattr(mcp._mcp_server, "tools"):
-                tools = list(mcp._mcp_server.tools.keys())
+                tools_list = list(mcp._mcp_server.tools.keys())
         except:
             pass
         return {"status": "ok", "tools": tools}
