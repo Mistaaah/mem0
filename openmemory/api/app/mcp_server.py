@@ -27,7 +27,7 @@ from app.utils.db import get_user_and_app
 from app.utils.memory import get_memory_client
 from app.utils.permissions import check_memory_access_permissions
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response, status
 from fastapi.routing import APIRouter
 from mcp.server.fastmcp import FastMCP
 from mcp.server.sse import SseServerTransport
@@ -467,22 +467,47 @@ async def _handle_post_message_core(request: Request):
     """Handle POST messages for SSE"""
     try:
         body = await request.body()
+        
+        # Captured response info for the ASGI send callback
+        # Status code 204 No Content is a safe default for successful message ingestion
+        response_data = {"status": status.HTTP_204_NO_CONTENT, "headers": [], "body": b""}
 
-        # Create a simple receive function that returns the body
+        # Create a receive function for the MCP SDK to read the message body
         async def receive():
             return {"type": "http.request", "body": body, "more_body": False}
 
-        # Create a simple send function that does nothing
+        # Create a send function for the MCP SDK to write the response info
         async def send(message):
-            return {}
+            if message["type"] == "http.response.start":
+                response_data["status"] = message["status"]
+                response_data["headers"] = message.get("headers", [])
+            elif message["type"] == "http.response.body":
+                response_data["body"] += message.get("body", b"")
 
-        # Call handle_post_message with the correct arguments
+        # Delegate handling of the actual message to the MCP SSE transport
         await sse.handle_post_message(request.scope, receive, send)
 
-        # Return a success response
-        return {"status": "ok"}
-    finally:
-        pass
+        # Return the captured response info back to FastAPI
+        # Convert list of tuples (headers) to a dictionary if needed
+        # headers = {k.decode() if isinstance(k, bytes) else k: v.decode() if isinstance(v, bytes) else v 
+        #           for k, v in response_data["headers"]}
+        
+        # For simple cases, we just return the body and status
+        # Most MCP SDK implementations return 204/202 for messages
+        return Response(
+            content=response_data["body"],
+            status_code=response_data["status"],
+            # Avoid sending duplicate/incorrect headers by filtering
+            headers={k.decode() if isinstance(k, bytes) else k: v.decode() if isinstance(v, bytes) else v 
+                    for k, v in response_data["headers"] 
+                    if (k.decode() if isinstance(k, bytes) else k).lower() not in ('content-length', 'content-type')}
+        )
+    except Exception as e:
+        logging.exception(f"Error handling MCP post message: {e}")
+        return Response(
+            content=json.dumps({"error": str(e)}),
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 def setup_mcp_server(app: FastAPI):
     """Setup MCP server with the FastAPI application"""
