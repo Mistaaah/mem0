@@ -515,6 +515,20 @@ async def _handle_post_message_core(request: Request):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+@mcp_router.get("/health")
+async def mcp_health():
+    """Check MCP server health and registered tools"""
+    try:
+        tools = [t.name for t in mcp._mcp_server.list_tools()]
+        return {
+            "status": "ok",
+            "server_name": mcp._mcp_server.name,
+            "tools_count": len(tools),
+            "tools": tools
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
 def setup_mcp_server(app: FastAPI):
     """Setup MCP server with the FastAPI application"""
     mcp._mcp_server.name = "mem0-mcp-server"
