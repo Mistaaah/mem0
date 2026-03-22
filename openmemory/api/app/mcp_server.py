@@ -469,7 +469,6 @@ async def _handle_post_message_core(request: Request):
         body = await request.body()
         
         # Captured response info for the ASGI send callback
-        # Status code 204 No Content is a safe default for successful message ingestion
         response_data = {"status": status.HTTP_204_NO_CONTENT, "headers": [], "body": b""}
 
         # Create a receive function for the MCP SDK to read the message body
@@ -487,25 +486,30 @@ async def _handle_post_message_core(request: Request):
         # Delegate handling of the actual message to the MCP SSE transport
         await sse.handle_post_message(request.scope, receive, send)
 
-        # Return the captured response info back to FastAPI
-        # Convert list of tuples (headers) to a dictionary if needed
-        # headers = {k.decode() if isinstance(k, bytes) else k: v.decode() if isinstance(v, bytes) else v 
-        #           for k, v in response_data["headers"]}
-        
-        # For simple cases, we just return the body and status
-        # Most MCP SDK implementations return 204/202 for messages
+        # Convert list of tuples (headers) to a dictionary safely
+        response_headers = {}
+        if response_data.get("headers"):
+            for k, v in response_data["headers"]:
+                try:
+                    # Headers in ASGI are bytes, but we need strings for FastAPI Response
+                    key = k.decode('latin-1') if isinstance(k, bytes) else str(k)
+                    val = v.decode('latin-1') if isinstance(v, bytes) else str(v)
+                    # Skip hop-by-hop or headers that FastAPI/Uvicorn manage themselves
+                    if key.lower() not in ('content-length', 'content-type', 'transfer-encoding'):
+                        response_headers[key] = val
+                except Exception:
+                    continue
+
         return Response(
-            content=response_data["body"],
-            status_code=response_data["status"],
-            # Avoid sending duplicate/incorrect headers by filtering
-            headers={k.decode() if isinstance(k, bytes) else k: v.decode() if isinstance(v, bytes) else v 
-                    for k, v in response_data["headers"] 
-                    if (k.decode() if isinstance(k, bytes) else k).lower() not in ('content-length', 'content-type')}
+            content=response_data.get("body") or b"",
+            status_code=response_data.get("status") or 204,
+            headers=response_headers or None
         )
     except Exception as e:
+        import logging
         logging.exception(f"Error handling MCP post message: {e}")
         return Response(
-            content=json.dumps({"error": str(e)}),
+            content=f"Internal Error: {e}".encode(),
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
