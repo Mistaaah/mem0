@@ -466,45 +466,10 @@ async def handle_post_message_with_ids(request: Request, client_name: str, user_
 async def _handle_post_message_core(request: Request):
     """Handle POST messages for SSE"""
     try:
-        body = await request.body()
-        
-        # Captured response info for the ASGI send callback
-        response_data = {"status": status.HTTP_204_NO_CONTENT, "headers": [], "body": b""}
-
-        # Create a receive function for the MCP SDK to read the message body
-        async def receive():
-            return {"type": "http.request", "body": body, "more_body": False}
-
-        # Create a send function for the MCP SDK to write the response info
-        async def send(message):
-            if message["type"] == "http.response.start":
-                response_data["status"] = message["status"]
-                response_data["headers"] = message.get("headers", [])
-            elif message["type"] == "http.response.body":
-                response_data["body"] += message.get("body", b"")
-
-        # Delegate handling of the actual message to the MCP SSE transport
-        await sse.handle_post_message(request.scope, receive, send)
-
-        # Convert list of tuples (headers) to a dictionary safely
-        response_headers = {}
-        if response_data.get("headers"):
-            for k, v in response_data["headers"]:
-                try:
-                    # Headers in ASGI are bytes, but we need strings for FastAPI Response
-                    key = k.decode('latin-1') if isinstance(k, bytes) else str(k)
-                    val = v.decode('latin-1') if isinstance(v, bytes) else str(v)
-                    # Skip hop-by-hop or headers that FastAPI/Uvicorn manage themselves
-                    if key.lower() not in ('content-length', 'content-type', 'transfer-encoding'):
-                        response_headers[key] = val
-                except Exception:
-                    continue
-
-        return Response(
-            content=response_data.get("body") or b"",
-            status_code=response_data.get("status") or 204,
-            headers=response_headers or None
-        )
+        # Use direct ASGI bridge for better compatibility
+        await sse.handle_post_message(request.scope, request.receive, request._send)
+        # Even if the above wrote a response, we return a 204 if nothing was written yet
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as e:
         import traceback
         import logging
