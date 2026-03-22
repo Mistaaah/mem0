@@ -15,7 +15,7 @@ if not DATABASE_URL:
 # Only use check_same_thread for SQLite
 connect_args = {}
 if DATABASE_URL.startswith("sqlite://"):
-    connect_args = {"check_same_thread":": False}
+    connect_args = {"check_same_thread": False}
 
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
