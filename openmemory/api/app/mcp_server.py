@@ -480,31 +480,31 @@ async def _handle_post_message_core(request: Request):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-@mcp_router.get("/health")
-async def mcp_health():
-    """Check MCP server health and registered tools"""
-    try:
-        import asyncio
-        if hasattr(mcp._mcp_server, "list_tools"):
-            if asyncio.iscoroutinefunction(mcp._mcp_server.list_tools):
-                ts = await mcp._mcp_server.list_tools()
-            else:
-                ts = mcp._mcp_server.list_tools()
-            tools = [t.name for t in ts]
-        else:
-            tools = []
-        return {
-            "status": "ok",
-            "server_name": mcp._mcp_server.name,
-            "tools_count": len(tools),
-            "tools": tools
-        }
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
-
 def setup_mcp_server(app: FastAPI):
     """Setup MCP server with the FastAPI application"""
     mcp._mcp_server.name = "mem0-mcp-server"
 
-    # Include MCP router in the FastAPI app
-    app.include_router(mcp_router)
+    @app.get("/mcp/{client_name}/sse/{user_id}")
+    async def handle_sse(request: Request):
+        uid = request.path_params.get("user_id")
+        user_token = user_id_var.set(uid or "")
+        client_name = request.path_params.get("client_name")
+        client_token = client_name_var.set(client_name or "")
+        try:
+            async with sse.connect_sse(request.scope, request.receive, request._send) as (read, write):
+                await mcp._mcp_server.run(read, write, mcp._mcp_server.create_initialization_options())
+        finally:
+            user_id_var.reset(user_token)
+            client_name_var.reset(client_token)
+
+    @app.post("/mcp/messages/")
+    async def handle_mcp_messages(request: Request):
+        try:
+            await sse.handle_post_message(request.scope, request.receive, request._send)
+            return Response(status_code=204)
+        except Exception as e:
+            return Response(content=str(e).encode(), status_code=500)
+
+    @app.get("/mcp/health")
+    async def mcp_health():
+        return {"status": "ok", "tools": [t.name for t in mcp._mcp_server.tools]}
