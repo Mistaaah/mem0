@@ -4,7 +4,7 @@ import json
 import sys
 
 async def run_diag():
-    url = "https://mem0-production-6969.up.railway.app/mcp/antigravity/sse/gonzo"
+    url = "http://127.0.0.1:8000/mcp/antigravity/sse/gonzo"
     headers = {
         "X-API-Key": "x@!b2BFg&zFEnK%!3ekK",
         "Content-Type": "application/json"
@@ -20,10 +20,11 @@ async def run_diag():
                 if response.status_code != 200:
                     print(f"Failed to connect: {response.status_code}")
                     return
-
+ 
                 print("2. Discovery - waiting for endpoint event...")
                 endpoint = None
                 async for line in response.aiter_lines():
+                    print(f"DEBUG: {line}")
                     if line.startswith("data:"):
                         endpoint = line[5:].strip()
                         print(f"Endpoint received: {endpoint}")
@@ -43,25 +44,23 @@ async def run_diag():
                     "params": {
                         "protocolVersion": "2024-11-05",
                         "capabilities": {},
-                        "clientInfo": {"name": "Antigravity-Diagnostic", "version": "1.0.0"}
+                        "clientInfo": {"name": "Antigravity-Diag", "version": "1.0.0"}
                     }
                 }
                 
                 post_resp = await client.post(post_url, json=init_payload, headers=headers)
                 print(f"POST Result: {post_resp.status_code}")
-                print(f"POST Body: {post_resp.text}")
-                
                 if post_resp.status_code >= 400:
-                    print("Initialize POST failed.")
+                    print(f"POST Body: {post_resp.text}")
                     return
 
                 print("4. Waiting for JSON-RPC response in SSE stream...")
                 async for line in response.aiter_lines():
+                    print(f"DEBUG SSE: {line}")
                     if line.startswith("data:"):
                         payload = json.loads(line[5:].strip())
-                        print(f"SSE Payload: {json.dumps(payload, indent=2)}")
                         if payload.get("id") == 1:
-                            print("SUCCESS: Initialize handshake complete!")
+                            print("SUCCESS: Initialize complete!")
                             
                             print("5. Requesting tool list...")
                             tools_payload = {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}
