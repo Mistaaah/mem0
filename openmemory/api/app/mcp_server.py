@@ -519,7 +519,7 @@ async def _handle_post_message_core(request: Request):
 async def mcp_health():
     """Check MCP server health and registered tools"""
     try:
-        tools = [t.name for t in mcp._mcp_server.list_tools()]
+        tools = [t.name for t in await mcp._mcp_server.list_tools()]
         return {
             "status": "ok",
             "server_name": mcp._mcp_server.name,
