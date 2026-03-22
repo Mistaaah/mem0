@@ -455,15 +455,15 @@ async def handle_sse(request: Request):
 
 
 @mcp_router.post("/messages/")
-async def handle_get_message(request: Request):
-    return await handle_post_message(request)
+async def handle_global_message(request: Request):
+    return await _handle_post_message_core(request)
 
 
 @mcp_router.post("/{client_name}/sse/{user_id}/messages/")
-async def handle_post_message(request: Request):
-    return await handle_post_message(request)
+async def handle_post_message_with_ids(request: Request, client_name: str, user_id: str):
+    return await _handle_post_message_core(request)
 
-async def handle_post_message(request: Request):
+async def _handle_post_message_core(request: Request):
     """Handle POST messages for SSE"""
     try:
         body = await request.body()
