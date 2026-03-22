@@ -506,10 +506,12 @@ async def _handle_post_message_core(request: Request):
             headers=response_headers or None
         )
     except Exception as e:
+        import traceback
         import logging
+        error_msg = f"Internal Error: {e}\n{traceback.format_exc()}"
         logging.exception(f"Error handling MCP post message: {e}")
         return Response(
-            content=f"Internal Error: {e}".encode(),
+            content=error_msg.encode(),
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
