@@ -521,15 +521,9 @@ def setup_mcp_server(app: FastAPI):
     # 3. Simple Health Check
     @app.get("/mcp/health")
     async def mcp_health():
-        # Dynamic tool detection based on SDK version
-        tools_list = []
+        # FastMCP tools is usually a list of tool objects
         try:
-            # Fast() instances have a tools list or dict
-            if hasattr(mcp, "tools"):
-                tools_list = [t.name for t in mcp.tools] if isinstance(mcp.tools, list) else list(mcp.tools.keys())
-            # Or the underlying server instance
-            elif hasattr(mcp._mcp_server, "tools"):
-                tools_list = list(mcp._mcp_server.tools.keys())
+            tools = [t.name for t in mcp.tools]
         except:
-            pass
-        return {"status": "ok", "tools": tools}
+            tools = ["could not list tools"]
+        return {"status": "ok", "server": "openmemory-mcp", "tools": tools}
