@@ -6,13 +6,6 @@ memory operations for OpenMemory. The memory client is initialized lazily
 to prevent server crashes when external dependencies (like Ollama) are
 unavailable. If the memory client cannot be initialized, the server will
 continue running with limited functionality and appropriate error messages.
-
-Key features:
-- Lazy memory client initialization
-- Graceful error handling for unavailable dependencies
-- Fallback to database-only mode when vector store is unavailable
-- Proper logging for debugging connection issues
-- Environment variable parsing for API keys
 """
 
 import contextvars
@@ -182,7 +175,6 @@ async def search_memory(query: str) -> str:
 
             results = []
             for h in hits:
-                # All vector db search functions return OutputData class
                 id, score, payload = h.id, h.score, h.payload
                 if allowed and (h.id is None or h.id not in allowed):
                     continue
@@ -228,7 +220,6 @@ async def list_memories() -> str:
     if not client_name:
         return "Error: client_name not provided"
 
-    # Get memory client safely
     memory_client = get_memory_client_safe()
     if not memory_client:
         return "Error: Memory system is currently unavailable. Please try again later."
@@ -236,50 +227,41 @@ async def list_memories() -> str:
     try:
         db = SessionLocal()
         try:
-            # Get or create user and app
             user, app = get_user_and_app(db, user_id=uid, app_id=client_name)
-
-            # Get all memories
             memories = memory_client.get_all(user_id=uid)
             filtered_memories = []
 
-            # Filter memories based on permissions
             user_memories = db.query(Memory).filter(Memory.user_id == user.id).all()
             accessible_memory_ids = [memory.id for memory in user_memories if check_memory_access_permissions(db, memory, app.id)]
+            
             if isinstance(memories, dict) and 'results' in memories:
                 for memory_data in memories['results']:
                     if 'id' in memory_data:
                         memory_id = uuid.UUID(memory_data['id'])
                         if memory_id in accessible_memory_ids:
-                            # Create access log entry
                             access_log = MemoryAccessLog(
                                 memory_id=memory_id,
                                 app_id=app.id,
                                 access_type="list",
-                                metadata_={
-                                    "hash": memory_data.get('hash')
-                                }
+                                metadata_={"hash": memory_data.get('hash')}
                             )
                             db.add(access_log)
                             filtered_memories.append(memory_data)
-                db.commit()
             else:
                 for memory in memories:
                     memory_id = uuid.UUID(memory['id'])
                     memory_obj = db.query(Memory).filter(Memory.id == memory_id).first()
                     if memory_obj and check_memory_access_permissions(db, memory_obj, app.id):
-                        # Create access log entry
                         access_log = MemoryAccessLog(
                             memory_id=memory_id,
                             app_id=app.id,
                             access_type="list",
-                            metadata_={
-                                "hash": memory.get('hash')
-                            }
+                            metadata_={"hash": memory.get('hash')}
                         )
                         db.add(access_log)
                         filtered_memories.append(memory)
-                db.commit()
+            
+            db.commit()
             return json.dumps(filtered_memories, indent=2)
         finally:
             db.close()
@@ -297,7 +279,6 @@ async def delete_memories(memory_ids: list[str]) -> str:
     if not client_name:
         return "Error: client_name not provided"
 
-    # Get memory client safely
     memory_client = get_memory_client_safe()
     if not memory_client:
         return "Error: Memory system is currently unavailable. Please try again later."
@@ -305,37 +286,28 @@ async def delete_memories(memory_ids: list[str]) -> str:
     try:
         db = SessionLocal()
         try:
-            # Get or create user and app
             user, app = get_user_and_app(db, user_id=uid, app_id=client_name)
-
-            # Convert string IDs to UUIDs and filter accessible ones
             requested_ids = [uuid.UUID(mid) for mid in memory_ids]
             user_memories = db.query(Memory).filter(Memory.user_id == user.id).all()
             accessible_memory_ids = [memory.id for memory in user_memories if check_memory_access_permissions(db, memory, app.id)]
 
-            # Only delete memories that are both requested and accessible
             ids_to_delete = [mid for mid in requested_ids if mid in accessible_memory_ids]
 
             if not ids_to_delete:
                 return "Error: No accessible memories found with provided IDs"
 
-            # Delete from vector store
             for memory_id in ids_to_delete:
                 try:
                     memory_client.delete(str(memory_id))
                 except Exception as delete_error:
                     logging.warning(f"Failed to delete memory {memory_id} from vector store: {delete_error}")
 
-            # Update each memory's state and create history entries
             now = datetime.datetime.now(datetime.UTC)
             for memory_id in ids_to_delete:
                 memory = db.query(Memory).filter(Memory.id == memory_id).first()
                 if memory:
-                    # Update memory state
                     memory.state = MemoryState.deleted
                     memory.deleted_at = now
-
-                    # Create history entry
                     history = MemoryStatusHistory(
                         memory_id=memory_id,
                         changed_by=user.id,
@@ -343,8 +315,6 @@ async def delete_memories(memory_ids: list[str]) -> str:
                         new_state=MemoryState.deleted
                     )
                     db.add(history)
-
-                    # Create access log entry
                     access_log = MemoryAccessLog(
                         memory_id=memory_id,
                         app_id=app.id,
@@ -371,7 +341,6 @@ async def delete_all_memories() -> str:
     if not client_name:
         return "Error: client_name not provided"
 
-    # Get memory client safely
     memory_client = get_memory_client_safe()
     if not memory_client:
         return "Error: Memory system is currently unavailable. Please try again later."
@@ -379,28 +348,21 @@ async def delete_all_memories() -> str:
     try:
         db = SessionLocal()
         try:
-            # Get or create user and app
             user, app = get_user_and_app(db, user_id=uid, app_id=client_name)
-
             user_memories = db.query(Memory).filter(Memory.user_id == user.id).all()
             accessible_memory_ids = [memory.id for memory in user_memories if check_memory_access_permissions(db, memory, app.id)]
 
-            # delete the accessible memories only
             for memory_id in accessible_memory_ids:
                 try:
                     memory_client.delete(str(memory_id))
                 except Exception as delete_error:
                     logging.warning(f"Failed to delete memory {memory_id} from vector store: {delete_error}")
 
-            # Update each memory's state and create history entries
             now = datetime.datetime.now(datetime.UTC)
             for memory_id in accessible_memory_ids:
                 memory = db.query(Memory).filter(Memory.id == memory_id).first()
-                # Update memory state
                 memory.state = MemoryState.deleted
                 memory.deleted_at = now
-
-                # Create history entry
                 history = MemoryStatusHistory(
                     memory_id=memory_id,
                     changed_by=user.id,
@@ -408,8 +370,6 @@ async def delete_all_memories() -> str:
                     new_state=MemoryState.deleted
                 )
                 db.add(history)
-
-                # Create access log entry
                 access_log = MemoryAccessLog(
                     memory_id=memory_id,
                     app_id=app.id,
@@ -427,52 +387,13 @@ async def delete_all_memories() -> str:
         return f"Error deleting memories: {e}"
 
 
-@mcp_router.get("/{client_name}/sse/{user_id}")
-async def handle_sse(request: Request):
-    """Handle SSE connections for a specific user and client"""
-    # Extract user_id and client_name from path parameters
-    uid = request.path_params.get("user_id")
-    user_token = user_id_var.set(uid or "")
-    client_name = request.path_params.get("client_name")
-    client_token = client_name_var.set(client_name or "")
-
-    try:
-        # Handle SSE connection
-        async with sse.connect_sse(
-            request.scope,
-            request.receive,
-            request._send,
-        ) as (read_stream, write_stream):
-            await mcp._mcp_server.run(
-                read_stream,
-                write_stream,
-                mcp._mcp_server.create_initialization_options(),
-            )
-    finally:
-        # Clean up context variables
-        user_id_var.reset(user_token)
-        client_name_var.reset(client_token)
-
-
-@mcp_router.post("/messages/")
-async def handle_global_message(request: Request):
-    return await _handle_post_message_core(request)
-
-
-@mcp_router.post("/{client_name}/sse/{user_id}/messages/")
-async def handle_post_message_with_ids(request: Request, client_name: str, user_id: str):
-    return await _handle_post_message_core(request)
-
 async def _handle_post_message_core(request: Request):
     """Handle POST messages for SSE"""
     try:
-        # Use direct ASGI bridge for better compatibility
         await sse.handle_post_message(request.scope, request.receive, request._send)
-        # Even if the above wrote a response, we return a 204 if nothing was written yet
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        return Response(status_code=204)
     except Exception as e:
         import traceback
-        import logging
         error_msg = f"Internal Error: {e}\n{traceback.format_exc()}"
         logging.exception(f"Error handling MCP post message: {e}")
         return Response(
@@ -482,10 +403,8 @@ async def _handle_post_message_core(request: Request):
 
 def setup_mcp_server(app: FastAPI):
     """Setup MCP server with the FastAPI application"""
-    # Standardize the server name
     mcp._mcp_server.name = "mem0-mcp-server"
 
-    # 1. SSE Connection initiation
     @app.get("/mcp/{client_name}/sse/{user_id}")
     async def handle_sse(request: Request):
         uid = request.path_params.get("user_id")
@@ -493,9 +412,7 @@ def setup_mcp_server(app: FastAPI):
         client_name = request.path_params.get("client_name")
         client_token = client_name_var.set(client_name or "")
         try:
-            # Connect the SSE stream
             async with sse.connect_sse(request.scope, request.receive, request._send) as (read_stream, write_stream):
-                # Run the MCP server loop on this stream
                 await mcp._mcp_server.run(
                     read_stream,
                     write_stream,
@@ -505,25 +422,23 @@ def setup_mcp_server(app: FastAPI):
             user_id_var.reset(user_token)
             client_name_var.reset(client_token)
 
-    # 2. Global Messages Endpoint (POST)
-    # Most MCP clients use the absolute path /mcp/messages/
     @app.post("/mcp/messages/")
     @app.post("/mcp/messages")
     async def handle_mcp_messages(request: Request):
-        try:
-            await sse.handle_post_message(request.scope, request.receive, request._send)
-            return Response(status_code=204)
-        except Exception as e:
-            import traceback
-            error_data = f"Internal MCP Error: {e}\n{traceback.format_exc()}"
-            return Response(content=error_data.encode(), status_code=500)
+        return await _handle_post_message_core(request)
 
-    # 3. Simple Health Check
     @app.get("/mcp/health")
     async def mcp_health():
-        # FastMCP tools is usually a list of tool objects
+        tools_list = []
         try:
-            tools = [t.name for t in mcp.tools]
+            if hasattr(mcp, "tools") and callable(mcp.tools):
+                tools_list = [t.name for t in mcp.tools()]
+            elif hasattr(mcp, "tools"):
+                tools_list = [t.name for t in mcp.tools]
         except:
-            tools = ["could not list tools"]
-        return {"status": "ok", "server": "openmemory-mcp", "tools": tools}
+            tools_list = ["could not list tools"]
+        return {
+            "status": "ok",
+            "server": "openmemory-mcp",
+            "tools": tools_list
+        }
