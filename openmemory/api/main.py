@@ -18,14 +18,14 @@ from fastapi_pagination import add_pagination
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
 
 async def verify_admin_api_key(api_key: str = Depends(api_key_header)):
-    # Use your existing variable name 'ADMIN_API_KEY'
+    # FORCE the server to look for the key
     expected_key = os.getenv("ADMIN_API_KEY")
     
-    # Check if the provided key matches your Railway environment variable
-    if expected_key and api_key != expected_key:
+    # If the key is missing OR it doesn't match, block the request!
+    if not expected_key or api_key != expected_key:
         raise HTTPException(
             status_code=401, 
-            detail="Unauthorized: Invalid ADMIN_API_KEY"
+            detail="Unauthorized: Please provide a valid ADMIN_API_KEY in the X-API-KEY header."
         )
     return api_key
 
