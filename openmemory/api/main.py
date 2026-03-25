@@ -1,7 +1,10 @@
 import logging
 import datetime
-from uuid import uuid4
+import os
 
+from fastapi import Request, HTTPException, Depends
+from fastapi.security import APIKeyHeader
+from uuid import uuid4
 from app.config import DEFAULT_APP_ID, USER_ID
 from app.database import Base, SessionLocal, engine
 from app.mcp_server import setup_mcp_server
@@ -10,6 +13,28 @@ from app.routers import apps_router, backup_router, config_router, memories_rout
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
+
+# This tells the API to look for 'X-API-KEY' in the request headers
+api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
+
+async def verify_admin_api_key(api_key: str = Depends(api_key_header)):
+    # Use your existing variable name 'ADMIN_API_KEY'
+    expected_key = os.getenv("ADMIN_API_KEY")
+    
+    # Check if the provided key matches your Railway environment variable
+    if expected_key and api_key != expected_key:
+        raise HTTPException(
+            status_code=401, 
+            detail="Unauthorized: Invalid ADMIN_API_KEY"
+        )
+    return api_key
+
+# APPLY THE GUARD:
+# In your FastAPI(..) initialization, add the dependency:
+app = FastAPI(
+    title="OpenMemory API",
+    dependencies=[Depends(verify_admin_api_key)]  # This locks every single endpoint
+)
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
