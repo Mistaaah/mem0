@@ -17,6 +17,11 @@ from fastapi_pagination import add_pagination
 # This tells the API to look for 'X-API-KEY' in the request headers
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
 
+app = FastAPI(
+    title="OpenMemory API",
+    dependencies=[Depends(verify_admin_api_key)]
+)
+
 async def verify_admin_api_key(api_key: str = Depends(api_key_header)):
     # Use your existing variable name 'ADMIN_API_KEY'
     expected_key = os.getenv("ADMIN_API_KEY")
