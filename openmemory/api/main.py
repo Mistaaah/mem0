@@ -30,18 +30,16 @@ async def verify_admin_api_key(api_key: str = Depends(api_key_header)):
     return api_key
 
 
-# APPLY THE GUARD:
-# In your FastAPI(..) initialization, add the dependency:
-app = FastAPI(
-    title="OpenMemory API",
-    dependencies=[Depends(verify_admin_api_key)]  # This locks every single endpoint
-)
-
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="OpenMemory API")
+# APPLY THE GUARD:
+# Every single endpoint requires a valid ADMIN_API_KEY header.
+app = FastAPI(
+    title="OpenMemory API",
+    dependencies=[Depends(verify_admin_api_key)]
+)
 
 app.add_middleware(
     CORSMiddleware,
