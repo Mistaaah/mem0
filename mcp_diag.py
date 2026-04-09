@@ -1,12 +1,15 @@
 import httpx
 import asyncio
 import json
+import os
 import sys
 
 async def run_diag():
-    url = "https://mem0-production-6969.up.railway.app/mcp/antigravity/sse/gonzo"
+    api_key = os.getenv("ADMIN_API_KEY", "")
+    url = "https://mem0-api-production-774d.up.railway.app/mcp/vscode/sse/default_user"
+    if api_key:
+        url += f"?api_key={api_key}"
     headers = {
-        "X-API-Key": "x@!b2BFg&zFEnK%!3ekK",
         "Content-Type": "application/json"
     }
     
@@ -32,8 +35,10 @@ async def run_diag():
                 if not endpoint:
                     print("No endpoint received.")
                     return
-                
-                post_url = "https://mem0-production-6969.up.railway.app" + endpoint
+                post_url = "https://mem0-api-production-774d.up.railway.app" + endpoint
+                if api_key and "api_key=" not in post_url:
+                    sep = "&" if "?" in post_url else "?"
+                    post_url += f"{sep}api_key={api_key}"
                 
                 print(f"3. Sending 'initialize' request to {post_url}...")
                 init_payload = {

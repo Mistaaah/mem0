@@ -1,6 +1,8 @@
 import logging
 import datetime
 import os
+import secrets
+from typing import Optional
 
 from fastapi import Request, HTTPException, Depends
 from fastapi.security import APIKeyHeader
@@ -14,25 +16,42 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
 
+# Setup logging early so we can use it in verify_admin_api_key
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # This tells the API to look for 'X-API-KEY' in the request headers
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
 
-async def verify_admin_api_key(api_key: str = Depends(api_key_header)):
-    # FORCE the server to look for the key
+async def verify_admin_api_key(
+    request: Request,
+    api_key: Optional[str] = Depends(api_key_header),
+):
     expected_key = os.getenv("ADMIN_API_KEY")
-    
-    # If the key is missing OR it doesn't match, block the request!
-    if not expected_key or api_key != expected_key:
+
+    if not expected_key:
+        logger.warning("ADMIN_API_KEY not set — API is unsecured!")
+        return None
+
+    # Accept key from X-API-KEY header OR ?api_key= query param (required for SSE clients)
+    resolved_key = api_key or request.query_params.get("api_key")
+
+    if not resolved_key:
         raise HTTPException(
-            status_code=401, 
-            detail="Unauthorized: Please provide a valid ADMIN_API_KEY in the X-API-KEY header."
+            status_code=401,
+            detail="Unauthorized: Provide key via X-API-KEY header or ?api_key= query parameter.",
+            headers={"WWW-Authenticate": "ApiKey"},
         )
-    return api_key
 
+    if not secrets.compare_digest(resolved_key, expected_key):
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized: Invalid API key.",
+            headers={"WWW-Authenticate": "ApiKey"},
+        )
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+    return resolved_key
+
 
 # APPLY THE GUARD:
 # Every single endpoint requires a valid ADMIN_API_KEY header.
