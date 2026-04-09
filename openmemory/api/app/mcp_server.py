@@ -435,13 +435,29 @@ async def handle_sse(request: Request):
     user_token = user_id_var.set(uid or "")
     client_name = request.path_params.get("client_name")
     client_token = client_name_var.set(client_name or "")
+    api_key = request.query_params.get("api_key")
+
+    # Wrap _send to inject api_key into the messages endpoint URL the SDK
+    # sends back to the client (e.g. data: /mcp/messages/?session_id=UUID).
+    # Without this, the client POSTs to the messages URL without the key and
+    # gets a 401 (shown as "Method Not Allowed" in some clients).
+    async def send_with_api_key(message):
+        if api_key and message.get("type") == "http.response.body":
+            body = message.get("body", b"")
+            if b"/mcp/messages/?session_id=" in body:
+                body = body.replace(
+                    b"/mcp/messages/?session_id=",
+                    f"/mcp/messages/?api_key={api_key}&session_id=".encode(),
+                )
+                message = {**message, "body": body}
+        await request._send(message)
 
     try:
         # Handle SSE connection
         async with sse.connect_sse(
             request.scope,
             request.receive,
-            request._send,
+            send_with_api_key,
         ) as (read_stream, write_stream):
             await mcp._mcp_server.run(
                 read_stream,
