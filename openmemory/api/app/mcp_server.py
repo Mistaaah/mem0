@@ -171,35 +171,26 @@ async def search_memory(query: str) -> str:
             user_memories = db.query(Memory).filter(Memory.user_id == user.id).all()
             accessible_memory_ids = [memory.id for memory in user_memories if check_memory_access_permissions(db, memory, app.id)]
 
-            filters = {
-                "user_id": uid
-            }
-
-            embeddings = memory_client.embedding_model.embed(query, "search")
-
-            hits = memory_client.vector_store.search(
-                query=query, 
-                vectors=embeddings, 
-                limit=10, 
-                filters=filters,
+            # Use the public Memory.search API — newer mem0 versions dropped
+            # top-level user_id/limit kwargs on vector_store.search.
+            search_response = memory_client.search(
+                query=query,
+                filters={"user_id": uid},
+                limit=10,
             )
+            hits = search_response.get("results", []) if isinstance(search_response, dict) else list(search_response)
 
             allowed = set(str(mid) for mid in accessible_memory_ids) if accessible_memory_ids else None
 
             results = []
             for h in hits:
-                # All vector db search functions return OutputData class
-                id, score, payload = h.id, h.score, h.payload
-                if allowed and (h.id is None or h.id not in allowed):
+                hid = h.get("id") if isinstance(h, dict) else getattr(h, "id", None)
+                if allowed and (hid is None or hid not in allowed):
                     continue
-                
-                results.append({
-                    "id": id, 
-                    "memory": payload.get("data"), 
-                    "hash": payload.get("hash"),
-                    "created_at": payload.get("created_at"), 
-                    "updated_at": payload.get("updated_at"), 
-                    "score": score,
+                results.append(h if isinstance(h, dict) else {
+                    "id": hid,
+                    "memory": getattr(h, "memory", None),
+                    "score": getattr(h, "score", None),
                 })
 
             for r in results: 
@@ -245,8 +236,9 @@ async def list_memories() -> str:
             # Get or create user and app
             user, app = get_user_and_app(db, user_id=uid, app_id=client_name)
 
-            # Get all memories
-            memories = memory_client.get_all(user_id=uid)
+            # Get all memories. Newer mem0 versions require user_id inside
+            # filters rather than as a top-level kwarg.
+            memories = memory_client.get_all(filters={"user_id": uid})
             filtered_memories = []
 
             # Filter memories based on permissions
