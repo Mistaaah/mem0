@@ -531,6 +531,30 @@ async def _handle_post_message_core(request: Request):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+_streamable_http_asgi = None
+
+def _get_streamable_http_asgi():
+    global _streamable_http_asgi
+    if _streamable_http_asgi is None:
+        _streamable_http_asgi = mcp.streamable_http_app()
+    return _streamable_http_asgi
+
+
+@mcp_router.api_route("/{client_name}/http/{user_id}", methods=["GET", "POST", "DELETE", "PUT"])
+async def handle_streamable_http(request: Request, client_name: str, user_id: str):
+    """Streamable HTTP transport — works with Claude Desktop and modern MCP clients."""
+    user_token = user_id_var.set(user_id)
+    client_token = client_name_var.set(client_name)
+    try:
+        scope = dict(request.scope)
+        scope["path"] = "/mcp"
+        scope["raw_path"] = b"/mcp"
+        await _get_streamable_http_asgi()(scope, request.receive, request._send)
+    finally:
+        user_id_var.reset(user_token)
+        client_name_var.reset(client_token)
+
+
 def setup_mcp_server(app: FastAPI):
     """Setup MCP server with the FastAPI application"""
     mcp._mcp_server.name = "mem0-mcp-server"
