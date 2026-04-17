@@ -534,24 +534,26 @@ async def _handle_post_message_core(request: Request):
 class _StreamableHTTPMiddleware:
     """
     ASGI middleware that sits in front of the FastMCP streamable-HTTP app.
-    It strips the /mcp/{client_name}/http/{user_id} prefix, sets the async
-    context-vars that the tool handlers read, and enforces the API key.
+    It matches /mcp/{client_name}/http/{user_id}, sets the async context-vars
+    that the tool handlers read, enforces the API key, and rewrites the path
+    so the inner FastMCP app matches its /mcp route.
     """
     def __init__(self, asgi_app, expected_api_key: str | None):
         self.app = asgi_app
         self.expected_api_key = expected_api_key
 
     async def __call__(self, scope, receive, send):
-        import os, secrets as _secrets
+        import secrets as _secrets
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
 
+        # Starlette's Mount sets root_path but leaves scope["path"] as the full
+        # request path. Accept both the mounted form and a bare sub-path so we
+        # are resilient to Starlette version differences.
         path: str = scope.get("path", "")
-
-        # Match /{client_name}/http/{user_id}  (mount strips /mcp prefix)
         import re
-        m = re.match(r"^/?([^/]+)/http/([^/]+)$", path)
+        m = re.match(r"^(?:/mcp)?/([^/]+)/http/([^/]+)/?$", path)
         if not m:
             # Not our path — pass through unchanged
             await self.app(scope, receive, send)
