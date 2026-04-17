@@ -594,13 +594,26 @@ class _StreamableHTTPMiddleware:
 def setup_mcp_server(app: FastAPI):
     """Setup MCP server with the FastAPI application"""
     import os
+    from contextlib import asynccontextmanager
     mcp._mcp_server.name = "mem0-mcp-server"
 
     # Legacy SSE transport (Claude Code, Python clients)
     app.include_router(mcp_router)
 
     # Modern streamable-HTTP transport (Claude Desktop, mcp-remote)
-    # Mounted OUTSIDE FastAPI's router so it owns the full ASGI lifecycle
     streamable_app = mcp.streamable_http_app()
     wrapped = _StreamableHTTPMiddleware(streamable_app, os.getenv("ADMIN_API_KEY"))
     app.mount("/mcp", wrapped)
+
+    # FastMCP's streamable HTTP requires its session manager task group to be
+    # active. Mounting doesn't trigger the inner app's lifespan, so fold
+    # session_manager.run() into the outer FastAPI lifespan.
+    original_lifespan = app.router.lifespan_context
+
+    @asynccontextmanager
+    async def lifespan(app_):
+        async with mcp.session_manager.run():
+            async with original_lifespan(app_):
+                yield
+
+    app.router.lifespan_context = lifespan
