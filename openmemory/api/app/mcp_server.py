@@ -176,22 +176,45 @@ async def search_memory(query: str) -> str:
             search_response = memory_client.search(
                 query=query,
                 filters={"user_id": uid},
-                limit=10,
+                limit=20,
             )
             hits = search_response.get("results", []) if isinstance(search_response, dict) else list(search_response)
 
             allowed = set(str(mid) for mid in accessible_memory_ids) if accessible_memory_ids else None
+
+            MIN_SCORE = 0.30
+
+            def _hybrid_score(h: dict) -> float:
+                """Blend semantic similarity (70%) with recency (30%)."""
+                semantic = float(h.get("score") or 0)
+                try:
+                    ts = h.get("updated_at") or h.get("created_at") or ""
+                    ts = ts.replace("Z", "+00:00")
+                    updated = datetime.datetime.fromisoformat(ts)
+                    if updated.tzinfo is None:
+                        updated = updated.replace(tzinfo=datetime.timezone.utc)
+                    age_days = (datetime.datetime.now(datetime.timezone.utc) - updated).total_seconds() / 86400
+                    recency = max(0.0, 1.0 - age_days / 365)
+                except Exception:
+                    recency = 0.5
+                return 0.7 * semantic + 0.3 * recency
 
             results = []
             for h in hits:
                 hid = h.get("id") if isinstance(h, dict) else getattr(h, "id", None)
                 if allowed and (hid is None or hid not in allowed):
                     continue
-                results.append(h if isinstance(h, dict) else {
+                h = h if isinstance(h, dict) else {
                     "id": hid,
                     "memory": getattr(h, "memory", None),
                     "score": getattr(h, "score", None),
-                })
+                }
+                if float(h.get("score") or 0) < MIN_SCORE:
+                    continue
+                results.append(h)
+
+            results.sort(key=_hybrid_score, reverse=True)
+            results = results[:10]
 
             for r in results: 
                 if r.get("id"): 
@@ -278,6 +301,16 @@ async def list_memories() -> str:
                         db.add(access_log)
                         filtered_memories.append(memory)
                 db.commit()
+            def _parse_ts(m: dict) -> datetime.datetime:
+                ts = m.get("updated_at") or m.get("created_at") or ""
+                try:
+                    ts = ts.replace("Z", "+00:00")
+                    dt = datetime.datetime.fromisoformat(ts)
+                    return dt if dt.tzinfo else dt.replace(tzinfo=datetime.timezone.utc)
+                except Exception:
+                    return datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+
+            filtered_memories.sort(key=_parse_ts, reverse=True)
             return json.dumps(filtered_memories, indent=2)
         finally:
             db.close()
