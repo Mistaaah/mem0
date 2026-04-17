@@ -576,10 +576,14 @@ class _StreamableHTTPMiddleware:
                 await send({"type": "http.response.body", "body": body})
                 return
 
-        # Rewrite path to /mcp so the inner Starlette app matches its route
+        # Rewrite path to /mcp so the inner Starlette app matches its route.
+        # Starlette's get_route_path() strips root_path from path before
+        # matching, so we must also clear root_path — otherwise "/mcp" minus
+        # root_path "/mcp" becomes "" and nothing matches.
         new_scope = dict(scope)
         new_scope["path"] = "/mcp"
         new_scope["raw_path"] = b"/mcp"
+        new_scope["root_path"] = ""
 
         # Set context vars; they propagate into child tasks created by the session manager
         user_token = user_id_var.set(user_id_val)
