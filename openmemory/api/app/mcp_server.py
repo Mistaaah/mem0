@@ -531,33 +531,74 @@ async def _handle_post_message_core(request: Request):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-_streamable_http_asgi = None
+class _StreamableHTTPMiddleware:
+    """
+    ASGI middleware that sits in front of the FastMCP streamable-HTTP app.
+    It strips the /mcp/{client_name}/http/{user_id} prefix, sets the async
+    context-vars that the tool handlers read, and enforces the API key.
+    """
+    def __init__(self, asgi_app, expected_api_key: str | None):
+        self.app = asgi_app
+        self.expected_api_key = expected_api_key
 
-def _get_streamable_http_asgi():
-    global _streamable_http_asgi
-    if _streamable_http_asgi is None:
-        _streamable_http_asgi = mcp.streamable_http_app()
-    return _streamable_http_asgi
+    async def __call__(self, scope, receive, send):
+        import os, secrets as _secrets
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
+        path: str = scope.get("path", "")
 
-@mcp_router.api_route("/{client_name}/http/{user_id}", methods=["GET", "POST", "DELETE", "PUT"])
-async def handle_streamable_http(request: Request, client_name: str, user_id: str):
-    """Streamable HTTP transport — works with Claude Desktop and modern MCP clients."""
-    user_token = user_id_var.set(user_id)
-    client_token = client_name_var.set(client_name)
-    try:
-        scope = dict(request.scope)
-        scope["path"] = "/mcp"
-        scope["raw_path"] = b"/mcp"
-        await _get_streamable_http_asgi()(scope, request.receive, request._send)
-    finally:
-        user_id_var.reset(user_token)
-        client_name_var.reset(client_token)
+        # Match /mcp/{client_name}/http/{user_id}
+        import re
+        m = re.match(r"^/mcp/([^/]+)/http/([^/]+)$", path)
+        if not m:
+            # Not our path — pass through unchanged
+            await self.app(scope, receive, send)
+            return
+
+        client_name_val, user_id_val = m.group(1), m.group(2)
+
+        # Auth: accept key from query-param or X-API-KEY header
+        from urllib.parse import parse_qs
+        qs = parse_qs(scope.get("query_string", b"").decode())
+        provided_key = (qs.get("api_key", [None])[0] or
+                        dict(scope.get("headers", [])).get(b"x-api-key", b"").decode() or None)
+
+        if self.expected_api_key:
+            if not provided_key or not _secrets.compare_digest(provided_key, self.expected_api_key):
+                body = b'{"detail":"Unauthorized"}'
+                await send({"type": "http.response.start", "status": 401,
+                            "headers": [[b"content-type", b"application/json"],
+                                        [b"content-length", str(len(body)).encode()]]})
+                await send({"type": "http.response.body", "body": body})
+                return
+
+        # Rewrite path to /mcp so the inner Starlette app matches its route
+        new_scope = dict(scope)
+        new_scope["path"] = "/mcp"
+        new_scope["raw_path"] = b"/mcp"
+
+        # Set context vars; they propagate into child tasks created by the session manager
+        user_token = user_id_var.set(user_id_val)
+        client_token = client_name_var.set(client_name_val)
+        try:
+            await self.app(new_scope, receive, send)
+        finally:
+            user_id_var.reset(user_token)
+            client_name_var.reset(client_token)
 
 
 def setup_mcp_server(app: FastAPI):
     """Setup MCP server with the FastAPI application"""
+    import os
     mcp._mcp_server.name = "mem0-mcp-server"
 
-    # Include MCP router in the FastAPI app
+    # Legacy SSE transport (Claude Code, Python clients)
     app.include_router(mcp_router)
+
+    # Modern streamable-HTTP transport (Claude Desktop, mcp-remote)
+    # Mounted OUTSIDE FastAPI's router so it owns the full ASGI lifecycle
+    streamable_app = mcp.streamable_http_app()
+    wrapped = _StreamableHTTPMiddleware(streamable_app, os.getenv("ADMIN_API_KEY"))
+    app.mount("/mcp", wrapped)
