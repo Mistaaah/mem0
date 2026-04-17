@@ -435,7 +435,9 @@ async def handle_sse(request: Request):
     user_token = user_id_var.set(uid or "")
     client_name = request.path_params.get("client_name")
     client_token = client_name_var.set(client_name or "")
-    api_key = request.query_params.get("api_key")
+
+    # Get api_key from query params OR X-API-KEY header (clients may pass via header)
+    api_key = request.query_params.get("api_key") or request.headers.get("x-api-key")
 
     # Wrap _send to inject api_key into the messages endpoint URL the SDK
     # sends back to the client (e.g. data: /mcp/messages/?session_id=UUID).
