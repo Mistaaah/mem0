@@ -31,12 +31,18 @@ from fastapi import FastAPI, Request, Response, status
 from fastapi.routing import APIRouter
 from mcp.server.fastmcp import FastMCP
 from mcp.server.sse import SseServerTransport
+from mcp.server.transport_security import TransportSecuritySettings
 
 # Load environment variables
 load_dotenv()
 
-# Initialize MCP
-mcp = FastMCP("mem0-mcp-server")
+# Initialize MCP. DNS rebinding protection is disabled because this server is
+# fronted by an API-key check at the edge and must serve arbitrary Host values
+# (Railway's generated domain, any custom domain, localhost for dev).
+mcp = FastMCP(
+    "mem0-mcp-server",
+    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
+)
 
 # Don't initialize memory client at import time - do it lazily when needed
 def get_memory_client_safe():
