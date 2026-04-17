@@ -549,9 +549,9 @@ class _StreamableHTTPMiddleware:
 
         path: str = scope.get("path", "")
 
-        # Match /mcp/{client_name}/http/{user_id}
+        # Match /{client_name}/http/{user_id}  (mount strips /mcp prefix)
         import re
-        m = re.match(r"^/mcp/([^/]+)/http/([^/]+)$", path)
+        m = re.match(r"^/?([^/]+)/http/([^/]+)$", path)
         if not m:
             # Not our path — pass through unchanged
             await self.app(scope, receive, send)
