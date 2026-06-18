@@ -1,0 +1,412 @@
+Indexing...
+Uploading...
+  Build Logs: https://railway.com/project/991509ec-222f-4428-9863-15d66e8e1ae8/service/d1de75c7-772b-4275-9fdd-037ed0ce2604?id=be08e803-bfe0-4190-9bd9-4322f81954ad&
+CI mode enabled
+scheduling build on Metal builder "builder-kflyku"
+scheduling build on Metal builder "production-builderv3-us-west1-sg6t"
+fetched snapshot sha256:65eaf6e27dff699152c535581c2b5936b7fdaf3e6a4915005f37b9ceaf22abb5 (22 MB bytes)
+fetching snapshot
+unpacking archive
+[internal] load build definition from openmemory/api/Dockerfile
+[internal] load build definition from openmemory/api/Dockerfile
+[internal] load build definition from openmemory/api/Dockerfile
+[internal] load build definition from openmemory/api/Dockerfile
+[internal] load metadata for docker.io/library/python:3.12-slim
+[internal] load metadata for docker.io/library/python:3.12-slim
+[internal] load .dockerignore
+[internal] load .dockerignore
+[internal] load .dockerignore
+[internal] load .dockerignore
+[6/6] COPY . .
+[5/6] COPY config.json .
+[4/6] RUN pip install -r requirements.txt
+[3/6] COPY requirements.txt .
+[internal] load build context
+[2/6] WORKDIR /usr/src/openmemory
+[1/6] FROM docker.io/library/python:3.12-slim@sha256:d764629ce0ddd8c71fd371e9901efb324a95789d2315a47db7e4d27e78f1b0e9
+[1/6] FROM docker.io/library/python:3.12-slim@sha256:d764629ce0ddd8c71fd371e9901efb324a95789d2315a47db7e4d27e78f1b0e9
+[internal] load build context
+[internal] load build context
+[internal] load build context
+[1/6] FROM docker.io/library/python:3.12-slim@sha256:d764629ce0ddd8c71fd371e9901efb324a95789d2315a47db7e4d27e78f1b0e9
+[internal] load build context
+[2/6] WORKDIR /usr/src/openmemory
+[3/6] COPY requirements.txt .
+[3/6] COPY requirements.txt .
+[4/6] RUN pip install -r requirements.txt
+Collecting fastapi>=0.68.0 (from -r requirements.txt (line 1))
+
+  Downloading fastapi-0.137.2-py3-none-any.whl.metadata (27 kB)
+
+Collecting uvicorn>=0.15.0 (from -r requirements.txt (line 2))
+
+  Downloading uvicorn-0.49.0-py3-none-any.whl.metadata (6.7 kB)
+
+Collecting sqlalchemy>=1.4.0 (from -r requirements.txt (line 3))
+
+  Downloading sqlalchemy-2.0.51-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (9.5 kB)
+
+Collecting python-dotenv>=0.19.0 (from -r requirements.txt (line 4))
+
+  Downloading python_dotenv-1.2.2-py3-none-any.whl.metadata (27 kB)
+
+Collecting alembic>=1.7.0 (from -r requirements.txt (line 5))
+
+  Downloading alembic-1.18.4-py3-none-any.whl.metadata (7.2 kB)
+
+Collecting psycopg2-binary>=2.9.0 (from -r requirements.txt (line 6))
+
+  Downloading psycopg2_binary-2.9.12-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (4.9 kB)
+
+Collecting python-multipart>=0.0.5 (from -r requirements.txt (line 7))
+
+  Downloading python_multipart-0.0.32-py3-none-any.whl.metadata (2.1 kB)
+
+Collecting fastapi-pagination>=0.12.0 (from -r requirements.txt (line 8))
+
+  Downloading fastapi_pagination-0.15.15-py3-none-any.whl.metadata (6.6 kB)
+
+Collecting mem0ai>=0.1.92 (from -r requirements.txt (line 9))
+
+  Downloading mem0ai-2.0.7-py3-none-any.whl.metadata (14 kB)
+
+Collecting openai>=1.40.0 (from -r requirements.txt (line 10))
+
+  Downloading openai-2.43.0-py3-none-any.whl.metadata (32 kB)
+
+Collecting mcp>=1.3.0 (from mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+  Downloading mcp-1.28.0-py3-none-any.whl.metadata (9.4 kB)
+
+Collecting pytest>=7.0.0 (from -r requirements.txt (line 12))
+
+  Downloading pytest-9.1.0-py3-none-any.whl.metadata (7.6 kB)
+
+Collecting pytest-asyncio>=0.21.0 (from -r requirements.txt (line 13))
+
+  Downloading pytest_asyncio-1.4.0-py3-none-any.whl.metadata (4.1 kB)
+
+Collecting httpx>=0.24.0 (from -r requirements.txt (line 14))
+
+  Downloading httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+
+Collecting pytest-cov>=4.0.0 (from -r requirements.txt (line 15))
+
+  Downloading pytest_cov-7.1.0-py3-none-any.whl.metadata (32 kB)
+
+Collecting tenacity==9.1.2 (from -r requirements.txt (line 16))
+
+  Downloading tenacity-9.1.2-py3-none-any.whl.metadata (1.2 kB)
+
+Collecting anthropic==0.51.0 (from -r requirements.txt (line 17))
+
+  Downloading anthropic-0.51.0-py3-none-any.whl.metadata (25 kB)
+
+Collecting ollama==0.4.8 (from -r requirements.txt (line 18))
+
+  Downloading ollama-0.4.8-py3-none-any.whl.metadata (4.7 kB)
+
+Collecting anyio<5,>=3.5.0 (from anthropic==0.51.0->-r requirements.txt (line 17))
+
+  Downloading anyio-4.14.0-py3-none-any.whl.metadata (4.6 kB)
+
+Collecting distro<2,>=1.7.0 (from anthropic==0.51.0->-r requirements.txt (line 17))
+
+  Downloading distro-1.9.0-py3-none-any.whl.metadata (6.8 kB)
+
+Collecting jiter<1,>=0.4.0 (from anthropic==0.51.0->-r requirements.txt (line 17))
+
+  Downloading jiter-0.15.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.2 kB)
+
+Collecting sniffio (from anthropic==0.51.0->-r requirements.txt (line 17))
+
+  Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+
+Collecting starlette>=0.46.0 (from fastapi>=0.68.0->-r requirements.txt (line 1))
+
+  Downloading typing_inspection-0.4.2-py3-none-any.whl.metadata (2.6 kB)
+
+Collecting h11>=0.8 (from uvicorn>=0.15.0->-r requirements.txt (line 2))
+
+  Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+
+Collecting greenlet>=1 (from sqlalchemy>=1.4.0->-r requirements.txt (line 3))
+
+Collecting protobuf<7.0.0,>=5.29.6 (from mem0ai>=0.1.92->-r requirements.txt (line 9))
+
+Collecting jsonschema>=4.20.0 (from mcp>=1.3.0->mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+Collecting pydantic-settings>=2.5.2 (from mcp>=1.3.0->mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+Collecting sse-starlette>=1.6.1 (from mcp>=1.3.0->mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+  Downloading packaging-26.2-py3-none-any.whl.metadata (3.5 kB)
+
+  Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+
+Collecting pygments>=2.7.2 (from pytest>=7.0.0->-r requirements.txt (line 12))
+
+  Downloading pygments-2.20.0-py3-none-any.whl.metadata (2.5 kB)
+
+Collecting certifi (from httpx>=0.24.0->-r requirements.txt (line 14))
+
+  Downloading certifi-2026.6.17-py3-none-any.whl.metadata (2.5 kB)
+
+Collecting httpcore==1.* (from httpx>=0.24.0->-r requirements.txt (line 14))
+
+  Downloading httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+
+Collecting idna (from httpx>=0.24.0->-r requirements.txt (line 14))
+
+  Downloading idna-3.18-py3-none-any.whl.metadata (6.1 kB)
+
+Collecting coverage>=7.10.6 (from coverage[toml]>=7.10.6->pytest-cov>=4.0.0->-r requirements.txt (line 15))
+
+  Downloading coverage-7.14.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (8.6 kB)
+
+Collecting typer>=0.16.0 (from mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+  Downloading typer-0.26.7-py3-none-any.whl.metadata (16 kB)
+
+Collecting attrs>=22.2.0 (from jsonschema>=4.20.0->mcp>=1.3.0->mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+  Downloading attrs-26.1.0-py3-none-any.whl.metadata (8.8 kB)
+
+Collecting jsonschema-specifications>=2023.03.6 (from jsonschema>=4.20.0->mcp>=1.3.0->mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+  Downloading jsonschema_specifications-2025.9.1-py3-none-any.whl.metadata (2.9 kB)
+
+Collecting referencing>=0.28.4 (from jsonschema>=4.20.0->mcp>=1.3.0->mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+  Downloading referencing-0.37.0-py3-none-any.whl.metadata (2.8 kB)
+
+Collecting rpds-py>=0.25.0 (from jsonschema>=4.20.0->mcp>=1.3.0->mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+  Downloading rpds_py-2026.5.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.1 kB)
+
+Collecting requests<3.0,>=2.7 (from posthog>=7.14.0->mem0ai>=0.1.92->-r requirements.txt (line 9))
+
+  Downloading requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+
+Collecting backoff>=1.10.0 (from posthog>=7.14.0->mem0ai>=0.1.92->-r requirements.txt (line 9))
+
+  Downloading backoff-2.2.1-py3-none-any.whl.metadata (14 kB)
+
+Collecting annotated-types>=0.6.0 (from pydantic<3,>=1.9.0->anthropic==0.51.0->-r requirements.txt (line 17))
+
+  Downloading annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+
+Collecting pydantic-core==2.46.4 (from pydantic<3,>=1.9.0->anthropic==0.51.0->-r requirements.txt (line 17))
+
+  Downloading pydantic_core-2.46.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.6 kB)
+
+Collecting cryptography>=3.4.0 (from pyjwt[crypto]>=2.10.1->mcp>=1.3.0->mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+  Downloading cryptography-49.0.0-cp311-abi3-manylinux_2_34_x86_64.whl.metadata (4.3 kB)
+
+Collecting grpcio>=1.41.0 (from qdrant-client>=1.12.0->mem0ai>=0.1.92->-r requirements.txt (line 9))
+
+  Downloading grpcio-1.81.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (3.7 kB)
+
+Collecting numpy>=1.26 (from qdrant-client>=1.12.0->mem0ai>=0.1.92->-r requirements.txt (line 9))
+
+  Downloading numpy-2.4.6-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (6.6 kB)
+
+Collecting portalocker<4.0,>=2.7.0 (from qdrant-client>=1.12.0->mem0ai>=0.1.92->-r requirements.txt (line 9))
+
+  Downloading portalocker-3.2.0-py3-none-any.whl.metadata (8.7 kB)
+
+Collecting urllib3<3,>=1.26.14 (from qdrant-client>=1.12.0->mem0ai>=0.1.92->-r requirements.txt (line 9))
+
+  Downloading urllib3-2.7.0-py3-none-any.whl.metadata (6.9 kB)
+
+Collecting shellingham>=1.3.0 (from typer>=0.16.0->mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+  Downloading shellingham-1.5.4-py2.py3-none-any.whl.metadata (3.5 kB)
+
+Collecting rich>=13.8.0 (from typer>=0.16.0->mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+  Downloading rich-15.0.0-py3-none-any.whl.metadata (18 kB)
+
+Collecting MarkupSafe>=0.9.2 (from Mako->alembic>=1.7.0->-r requirements.txt (line 5))
+
+  Downloading markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+
+Collecting cffi>=2.0.0 (from cryptography>=3.4.0->pyjwt[crypto]>=2.10.1->mcp>=1.3.0->mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+  Downloading cffi-2.0.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.6 kB)
+
+Collecting h2<5,>=3 (from httpx[http2]>=0.20.0->qdrant-client>=1.12.0->mem0ai>=0.1.92->-r requirements.txt (line 9))
+
+  Downloading h2-4.3.0-py3-none-any.whl.metadata (5.1 kB)
+
+Collecting charset_normalizer<4,>=2 (from requests<3.0,>=2.7->posthog>=7.14.0->mem0ai>=0.1.92->-r requirements.txt (line 9))
+
+  Downloading charset_normalizer-3.4.7-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (40 kB)
+
+Collecting markdown-it-py>=2.2.0 (from rich>=13.8.0->typer>=0.16.0->mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+  Downloading markdown_it_py-4.2.0-py3-none-any.whl.metadata (7.4 kB)
+
+Collecting pycparser (from cffi>=2.0.0->cryptography>=3.4.0->pyjwt[crypto]>=2.10.1->mcp>=1.3.0->mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+  Downloading pycparser-3.0-py3-none-any.whl.metadata (8.2 kB)
+
+Collecting hyperframe<7,>=6.1 (from h2<5,>=3->httpx[http2]>=0.20.0->qdrant-client>=1.12.0->mem0ai>=0.1.92->-r requirements.txt (line 9))
+
+  Downloading hyperframe-6.1.0-py3-none-any.whl.metadata (4.3 kB)
+
+Collecting hpack<5,>=4.1 (from h2<5,>=3->httpx[http2]>=0.20.0->qdrant-client>=1.12.0->mem0ai>=0.1.92->-r requirements.txt (line 9))
+
+  Downloading hpack-4.1.0-py3-none-any.whl.metadata (4.6 kB)
+
+Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=13.8.0->typer>=0.16.0->mcp[cli]>=1.3.0->-r requirements.txt (line 11))
+
+Downloading anthropic-0.51.0-py3-none-any.whl (263 kB)
+
+Downloading ollama-0.4.8-py3-none-any.whl (13 kB)
+
+Downloading uvicorn-0.49.0-py3-none-any.whl (71 kB)
+
+Downloading sqlalchemy-2.0.51-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (3.4 MB)
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.4/3.4 MB 64.4 MB/s eta 0:00:00
+
+Downloading python_dotenv-1.2.2-py3-none-any.whl (22 kB)
+
+Downloading alembic-1.18.4-py3-none-any.whl (263 kB)
+
+Downloading psycopg2_binary-2.9.12-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.3 MB)
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.3/4.3 MB 37.1 MB/s eta 0:00:00
+
+Downloading python_multipart-0.0.32-py3-none-any.whl (30 kB)
+
+Downloading mem0ai-2.0.7-py3-none-any.whl (319 kB)
+
+Downloading openai-2.43.0-py3-none-any.whl (1.4 MB)
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.4/1.4 MB 75.8 MB/s eta 0:00:00
+
+Downloading mcp-1.28.0-py3-none-any.whl (221 kB)
+
+Downloading pytest-9.1.0-py3-none-any.whl (386 kB)
+
+Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+
+Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+
+Downloading annotated_doc-0.0.4-py3-none-any.whl (5.3 kB)
+
+Downloading anyio-4.14.0-py3-none-any.whl (123 kB)
+
+Downloading click-8.4.1-py3-none-any.whl (116 kB)
+
+Downloading coverage-7.14.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (254 kB)
+
+Downloading distro-1.9.0-py3-none-any.whl (20 kB)
+
+Downloading greenlet-3.5.2-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (613 kB)
+
+Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+
+Downloading idna-3.18-py3-none-any.whl (65 kB)
+
+Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+
+Downloading jiter-0.15.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (346 kB)
+
+Downloading packaging-26.2-py3-none-any.whl (100 kB)
+
+Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+
+Downloading posthog-7.19.2-py3-none-any.whl (279 kB)
+
+Downloading protobuf-6.33.6-cp39-abi3-manylinux2014_x86_64.whl (323 kB)
+
+Downloading pydantic-2.13.4-py3-none-any.whl (472 kB)
+
+Downloading pydantic_core-2.46.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+
+Downloading pydantic_settings-2.14.1-py3-none-any.whl (60 kB)
+
+Downloading pygments-2.20.0-py3-none-any.whl (1.2 MB)
+
+
+Downloading pyjwt-2.13.0-py3-none-any.whl (31 kB)
+
+Downloading pytz-2026.2-py2.py3-none-any.whl (510 kB)
+
+Downloading sse_starlette-3.4.4-py3-none-any.whl (16 kB)
+
+Downloading starlette-1.3.1-py3-none-any.whl (73 kB)
+
+Downloading tqdm-4.68.3-py3-none-any.whl (78 kB)
+
+Downloading typer-0.26.7-py3-none-any.whl (122 kB)
+
+Downloading certifi-2026.6.17-py3-none-any.whl (133 kB)
+
+Downloading sniffio-1.3.1-py3-none-any.whl (10 kB)
+
+Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+
+Downloading attrs-26.1.0-py3-none-any.whl (67 kB)
+
+Downloading backoff-2.2.1-py3-none-any.whl (15 kB)
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.7/4.7 MB 181.6 MB/s eta 0:00:00
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.8/6.8 MB 202.5 MB/s eta 0:00:00
+
+Downloading numpy-2.4.6-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (16.6 MB)
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.6/16.6 MB 195.2 MB/s eta 0:00:00
+
+Downloading referencing-0.37.0-py3-none-any.whl (26 kB)
+
+Downloading requests-2.34.2-py3-none-any.whl (73 kB)
+
+Downloading rpds_py-2026.5.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (376 kB)
+
+Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+
+Downloading urllib3-2.7.0-py3-none-any.whl (131 kB)
+
+Downloading cffi-2.0.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (219 kB)
+
+Downloading h2-4.3.0-py3-none-any.whl (61 kB)
+
+Downloading markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+
+Downloading hpack-4.1.0-py3-none-any.whl (34 kB)
+
+Downloading hyperframe-6.1.0-py3-none-any.whl (13 kB)
+
+Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+
+Downloading pycparser-3.0-py3-none-any.whl (48 kB)
+
+Installing collected packages: pytz, urllib3, typing-extensions, tqdm, tenacity, sniffio, shellingham, rpds-py, python-multipart, python-dotenv, pyjwt, pygments, pycparser, psycopg2-binary, protobuf, portalocker, pluggy, packaging, numpy, mdurl, MarkupSafe, jiter, iniconfig, idna, hyperframe, httpx-sse, hpack, h11, greenlet, distro, coverage, click, charset_normalizer, certifi, backoff, attrs, annotated-types, annotated-doc, uvicorn, typing-inspection, sqlalchemy, requests, referencing, pytest, pydantic-core, markdown-it-py, Mako, httpcore, h2, grpcio, cffi, anyio, starlette, rich, pytest-cov, pytest-asyncio, pydantic, posthog, jsonschema-specifications, httpx, cryptography, alembic, typer, sse-starlette, pydantic-settings, openai, ollama, jsonschema, fastapi, anthropic, qdrant-client, mcp, fastapi-pagination, mem0ai
+
+Successfully installed Mako-1.3.12 MarkupSafe-3.0.3 alembic-1.18.4 annotated-doc-0.0.4 annotated-types-0.7.0 anthropic-0.51.0 anyio-4.14.0 attrs-26.1.0 backoff-2.2.1 certifi-2026.6.17 cffi-2.0.0 charset_normalizer-3.4.7 click-8.4.1 coverage-7.14.1 cryptography-49.0.0 distro-1.9.0 fastapi-0.137.2 fastapi-pagination-0.15.15 greenlet-3.5.2 grpcio-1.81.1 h11-0.16.0 h2-4.3.0 hpack-4.1.0 httpcore-1.0.9 httpx-0.28.1 httpx-sse-0.4.3 hyperframe-6.1.0 idna-3.18 iniconfig-2.3.0 jiter-0.15.0 jsonschema-4.26.0 jsonschema-specifications-2025.9.1 markdown-it-py-4.2.0 mcp-1.28.0 mdurl-0.1.2 mem0ai-2.0.7 numpy-2.4.6 ollama-0.4.8 openai-2.43.0 packaging-26.2 pluggy-1.6.0 portalocker-3.2.0 posthog-7.19.2 protobuf-6.33.6 psycopg2-binary-2.9.12 pycparser-3.0 pydantic-2.13.4 pydantic-core-2.46.4 pydantic-settings-2.14.1 pygments-2.20.0 pyjwt-2.13.0 pytest-9.1.0 pytest-asyncio-1.4.0 pytest-cov-7.1.0 python-dotenv-1.2.2 python-multipart-0.0.32 pytz-2026.2 qdrant-client-1.18.0 referencing-0.37.0 requests-2.34.2 rich-15.0.0 rpds-py-2026.5.1 shellingham-1.5.4 sniffio-1.3.1 sqlalchemy-2.0.51 sse-starlette-3.4.4 starlette-1.3.1 tenacity-9.1.2 tqdm-4.68.3 typer-0.26.7 typing-extensions-4.15.0 typing-inspection-0.4.2 urllib3-2.7.0 uvicorn-0.49.0
+
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+
+
+[notice] A new release of pip is available: 25.0.1 -> 26.1.2
+[notice] To update, run: pip install --upgrade pip
+
+[4/6] RUN pip install -r requirements.txt
+[5/6] COPY config.json .
+[5/6] COPY config.json .
+[6/6] COPY . .
+[6/6] COPY . .
+exporting to docker image format
+exporting to docker image format
+containerimage.digest: sha256:8153e1ab55e48d00caec722463ccbefb3b70ac40a8945d509a054fceb17539a0
+containerimage.descriptor: eyJtZWRpYVR5cGUiOiJhcHBsaWNhdGlvbi92bmQub2NpLmltYWdlLm1hbmlmZXN0LnYxK2pzb24iLCJkaWdlc3QiOiJzaGEyNTY6ODE1M2UxYWI1NWU0OGQwMGNhZWM3MjI0NjNjY2JlZmIzYjcwYWM0MGE4OTQ1ZDUwOWEwNTRmY2ViMTc1MzlhMCIsInNpemUiOjIwMDMsImFubm90YXRpb25zIjp7Im9yZy5vcGVuY29udGFpbmVycy5pbWFnZS5jcmVhdGVkIjoiMjAyNi0wNi0xOFQxNjozMDowOFoifSwicGxhdGZvcm0iOnsiYXJjaGl0ZWN0dXJlIjoiYW1kNjQiLCJvcyI6ImxpbnV4In19
+containerimage.config.digest: sha256:b300b359d5e7d2db23bb462d14b077bd5ffd015b1d5ff59b5c5e71e544778458
+image push
+image push
+Deploy complete

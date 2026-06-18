@@ -86,7 +86,10 @@
       "Bash(python3 -c 'import urllib.parse; print\\(urllib.parse.quote\\('\\\\''LYJM$BL@4C7*kCai^d%6'\\\\'', safe='\\\\'''\\\\''\\)\\)')",
       "Bash(curl -s -o /dev/null -w '%{http_code}' 'https://mem0-api-production-774d.up.railway.app/mcp/claude/sse/default_user?api_key=__TRACKED_VAR__')",
       "Bash(curl -s -o /dev/null -w '%{http_code}' -H 'X-API-KEY: LYJM$BL@4C7*kCai^d%6' https://mem0-api-production-774d.up.railway.app/mcp/claude/sse/default_user)",
-      "mcp__claude_ai_openmemory__list_memories"
+      "mcp__claude_ai_openmemory__list_memories",
+      "PowerShell(railway whoami)",
+      "PowerShell(railway status)",
+      "PowerShell(railway variables -s mem0-api 2>&1)"
     ],
     "additionalDirectories": [
       "C:\\Users\\denni\\.claude",

@@ -1,0 +1,6 @@
+Indexing...
+Uploading...
+  Build Logs: https://railway.com/project/991509ec-222f-4428-9863-15d66e8e1ae8/service/d1de75c7-772b-4275-9fdd-037ed0ce2604?id=1e1f0c93-f9a4-430d-b3db-046843c1dcab&
+CI mode enabled
+scheduling build on Metal builder "production-builderv3-us-west1-sg6t"
+Deploy failed
