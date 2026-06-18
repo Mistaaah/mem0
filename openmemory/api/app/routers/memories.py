@@ -22,7 +22,7 @@ from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import paginate as sqlalchemy_paginate
 from pydantic import BaseModel
 from sqlalchemy import func
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, contains_eager, joinedload, selectinload
 
 router = APIRouter(prefix="/api/v1/memories", tags=["memories"])
 
@@ -569,14 +569,13 @@ async def filter_memories(
     if request.app_ids:
         query = query.filter(Memory.app_id.in_(request.app_ids))
 
-    # Add joins for app and categories
+    # Join app (many-to-one — needed for app_name sort, does not multiply rows)
     query = query.outerjoin(App, Memory.app_id == App.id)
 
-    # Apply category filter
+    # Apply category filter via EXISTS so the many-to-many join does not
+    # multiply rows (which previously forced a DISTINCT ON that Postgres rejects).
     if request.category_ids:
-        query = query.join(Memory.categories).filter(Category.id.in_(request.category_ids))
-    else:
-        query = query.outerjoin(Memory.categories)
+        query = query.filter(Memory.categories.any(Category.id.in_(request.category_ids)))
 
     # Apply date filters
     if request.from_date:
@@ -611,10 +610,13 @@ async def filter_memories(
         # Default sorting
         query = query.order_by(Memory.created_at.desc())
 
-    # Add eager loading for categories and make the query distinct
+    # Eager load without adding row-multiplying joins:
+    # selectinload for the many-to-many categories (separate query),
+    # contains_eager reuses the App outerjoin above. No DISTINCT needed.
     query = query.options(
-        joinedload(Memory.categories)
-    ).distinct(Memory.id)
+        selectinload(Memory.categories),
+        contains_eager(Memory.app)
+    )
 
     # Use fastapi-pagination's paginate function
     return sqlalchemy_paginate(
