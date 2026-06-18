@@ -2,90 +2,99 @@ import httpx
 import asyncio
 import json
 import os
-import sys
 
 async def run_diag():
     api_key = os.getenv("ADMIN_API_KEY", "")
-    url = "https://mem0-api-production-774d.up.railway.app/mcp/vscode/sse/default_user"
-    if api_key:
-        url += f"?api_key={api_key}"
-    headers = {
-        "Content-Type": "application/json"
-    }
-    
-    print(f"Targeting MCP Server at: {url}")
-    
+    if not api_key:
+        print("✗ ADMIN_API_KEY not set")
+        return
+
+    sse_url = f"https://mem0-api-production-774d.up.railway.app/mcp/vscode/sse/default_user?api_key={api_key}"
+    print(f"Targeting: {sse_url[:70]}...")
+
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            print("1. Establishing SSE connection...")
-            async with client.stream("GET", url, headers=headers) as response:
-                print(f"SSE Status: {response.status_code}")
-                if response.status_code != 200:
-                    print(f"Failed to connect: {response.status_code}")
+        async with httpx.AsyncClient(timeout=15) as client:
+            print("1. Opening SSE stream...")
+            async with client.stream("GET", sse_url) as resp:
+                if resp.status_code != 200:
+                    print(f"[FAIL] Connection failed: {resp.status_code}")
                     return
+                print(f"   [OK] Connected (200 OK)")
 
-                print("2. Discovery - waiting for endpoint event...")
                 endpoint = None
-                async for line in response.aiter_lines():
-                    if line.startswith("data:"):
-                        endpoint = line[5:].strip()
-                        print(f"Endpoint received: {endpoint}")
-                        break
-                
-                if not endpoint:
-                    print("No endpoint received.")
-                    return
-                post_url = "https://mem0-api-production-774d.up.railway.app" + endpoint
-                if api_key and "api_key=" not in post_url:
-                    sep = "&" if "?" in post_url else "?"
-                    post_url += f"{sep}api_key={api_key}"
-                
-                print(f"3. Sending 'initialize' request to {post_url}...")
-                init_payload = {
-                    "jsonrpc": "2.0",
-                    "id": 1,
-                    "method": "initialize",
-                    "params": {
-                        "protocolVersion": "2024-11-05",
-                        "capabilities": {},
-                        "clientInfo": {"name": "Antigravity-Diagnostic", "version": "1.0.0"}
-                    }
-                }
-                
-                post_resp = await client.post(post_url, json=init_payload, headers=headers)
-                print(f"POST Result: {post_resp.status_code}")
-                print(f"POST Body: {post_resp.text}")
-                
-                if post_resp.status_code >= 400:
-                    print("Initialize POST failed.")
-                    return
+                post_url = None
+                tools_sent = False
+                line_count = 0
 
-                print("4. Waiting for JSON-RPC response in SSE stream...")
-                async for line in response.aiter_lines():
+                async for line in resp.aiter_lines():
+                    line_count += 1
+                    if not line.strip():
+                        continue
+
+                    # Parse endpoint on first event
+                    if endpoint is None and line.startswith("data:"):
+                        endpoint = line.replace("data:", "").strip()
+                        post_url = f"https://mem0-api-production-774d.up.railway.app{endpoint}"
+                        print(f"2. Got endpoint from SSE")
+                        print(f"3. Sending initialize...")
+
+                        init_payload = {
+                            "jsonrpc": "2.0", "id": 1, "method": "initialize",
+                            "params": {
+                                "protocolVersion": "2024-11-05", "capabilities": {},
+                                "clientInfo": {"name": "test", "version": "1.0"}
+                            }
+                        }
+                        init_resp = await client.post(post_url, json=init_payload)
+                        if init_resp.status_code >= 400:
+                            print(f"   [FAIL] POST failed: {init_resp.status_code}")
+                            return
+                        print(f"   [OK] Initialize sent (202)")
+                        continue
+
+                    # Handle JSON-RPC responses
                     if line.startswith("data:"):
-                        payload = json.loads(line[5:].strip())
-                        print(f"SSE Payload: {json.dumps(payload, indent=2)}")
-                        if payload.get("id") == 1:
-                            print("SUCCESS: Initialize handshake complete!")
-                            
-                            print("5. Requesting tool list...")
-                            tools_payload = {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}
-                            tools_resp = await client.post(post_url, json=tools_payload, headers=headers)
-                            print(f"Tools POST Status: {tools_resp.status_code}")
-                            
-                            async for t_line in response.aiter_lines():
-                                if t_line.startswith("data:"):
-                                    t_payload = json.loads(t_line[5:].strip())
-                                    if t_payload.get("id") == 2:
-                                        tools = t_payload.get("result", {}).get("tools", [])
-                                        print(f"SUCCESS: Found {len(tools)} tools.")
-                                        for t in tools:
-                                            print(f" - {t['name']}")
-                                        print("\n*** DIAGNOSTIC PASSED: THE SERVER IS WORKING PERFECTLY ***")
+                        try:
+                            payload = json.loads(line[5:].strip())
+                            if isinstance(payload, dict):
+                                msg_id = payload.get("id")
+
+                                if msg_id == 1:
+                                    print(f"   [OK] Initialize response received")
+                                    print(f"4. Requesting tool list...")
+
+                                    tools_payload = {
+                                        "jsonrpc": "2.0", "id": 2, "method": "tools/list",
+                                        "params": {}
+                                    }
+                                    tools_resp = await client.post(post_url, json=tools_payload)
+                                    if tools_resp.status_code >= 400:
+                                        print(f"   [FAIL] POST failed: {tools_resp.status_code}")
                                         return
-                            break
+                                    print(f"   [OK] Tools request sent")
+                                    tools_sent = True
+
+                                elif msg_id == 2 and tools_sent:
+                                    tools = payload.get("result", {}).get("tools", [])
+                                    print(f"\n[SUCCESS] Found {len(tools)} tools:")
+                                    for tool in tools:
+                                        name = tool.get("name", "?")
+                                        print(f"   - {name}")
+                                    print("\n*** MCP SERVER IS WORKING - READY FOR CLAUDE CODE ***")
+                                    return
+                        except json.JSONDecodeError:
+                            pass
+
+                    if line_count > 1000:
+                        print("[FAIL] Timeout: no tools response after 1000 lines")
+                        return
+
+                print("[FAIL] Stream ended without tools response")
+
+    except asyncio.TimeoutError:
+        print("[FAIL] Timeout")
     except Exception as e:
-        print(f"Error during diagnostic: {e}")
+        print(f"[FAIL] Error: {e}")
 
 if __name__ == "__main__":
     asyncio.run(run_diag())
